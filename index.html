@@ -24,12 +24,13 @@
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         backdrop-filter: blur(4px);
         border: 1px solid rgba(255, 255, 255, 0.18);
+        overflow: hidden;
     }
     .controls-container {
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         padding: 20px;
         margin-left: 20px;
@@ -42,7 +43,7 @@
     }
     #decision-tree {
         width: 100%;
-        height: 600px;
+        height: 500px; /* Reduced height */
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 15px;
         overflow: hidden;
@@ -195,44 +196,48 @@
             ]
         };
 
-        const width = 800;
-        const height = 600;
-        const margin = { top: 20, right: 90, bottom: 30, left: 90 };
+        function createTree() {
+            const chartContainer = document.getElementById('decision-tree');
+            const width = chartContainer.clientWidth;
+            const height = chartContainer.clientHeight;
+            const margin = { top: 20, right: 90, bottom: 30, left: 90 };
 
-        const treemap = d3.tree().size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
+            const treemap = d3.tree().size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
 
-        const root = d3.hierarchy(data);
-        const treeData = treemap(root);
+            const root = d3.hierarchy(data);
+            const treeData = treemap(root);
 
-        const svg = d3.select("#decision-tree")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+            const svg = d3.select("#decision-tree")
+                .html("")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        const link = svg.selectAll(".link")
-            .data(treeData.links())
-            .enter().append("path")
-            .attr("class", "link")
-            .attr("d", d3.linkHorizontal()
-                .x(d => d.y)
-                .y(d => d.x));
+            const link = svg.selectAll(".link")
+                .data(treeData.links())
+                .enter().append("path")
+                .attr("class", "link")
+                .attr("d", d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x));
 
-        const node = svg.selectAll(".node")
-            .data(treeData.descendants())
-            .enter().append("g")
-            .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
-            .attr("transform", d => `translate(${d.y},${d.x})`);
+            const node = svg.selectAll(".node")
+                .data(treeData.descendants())
+                .enter().append("g")
+                .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+                .attr("transform", d => `translate(${d.y},${d.x})`);
 
-        node.append("circle")
-            .attr("r", 10);
+            node.append("circle")
+                .attr("r", 10);
 
-        node.append("text")
-            .attr("dy", ".35em")
-            .attr("x", d => d.children ? -13 : 13)
-            .style("text-anchor", d => d.children ? "end" : "start")
-            .text(d => d.data.name);
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.children ? -13 : 13)
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .text(d => d.data.name);
+        }
 
         function predict() {
             const outlook = document.getElementById("outlook").value;
@@ -269,13 +274,19 @@
             document.getElementById("prediction").textContent = prediction ? `Prediction: ${prediction}` : "Please select all options";
 
             // Highlight the selected path
-            svg.selectAll(".link")
+            d3.select("#decision-tree").selectAll(".link")
                 .classed("highlighted", d => {
                     return path.includes(d.source.data.name) && path.includes(d.target.data.name);
                 });
 
-            svg.selectAll(".node circle")
+            d3.select("#decision-tree").selectAll(".node circle")
                 .classed("highlighted", d => path.includes(d.data.name));
         }
+
+        // Create the tree initially
+        createTree();
+
+        // Recreate the tree when the window is resized
+        window.addEventListener('resize', createTree);
     </script>
 </body></html>
